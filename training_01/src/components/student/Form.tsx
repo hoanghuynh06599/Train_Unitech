@@ -18,10 +18,10 @@ interface ClassValue {
 }
 
 const getStudentById = async ({ studentId }: { studentId: string }) => {
-    const token = document.cookie.split("=")[1]
+    const token = localStorage.getItem('token')
     const res = await axios.get(`v1/builder/form/sinh-vien/data/${studentId}`, {
         headers: {
-            token: `Bearer ${token}`
+            Authorization: `Bearer ${token}`
         }
     });
 
@@ -39,16 +39,17 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
     const [studentInfo, setStudentInfo] = useState({
         maSinhVien: "",
         tenSinhVien: "",
-        moTa: "",
+        // moTa: "",
         classId: 0
     })
+    const [isError, setIsError] = useState(false)
 
     useEffect(() => {
         const getClassData = async() => {
-            const token = document.cookie.split("=")[1]
+            const token = localStorage.getItem('token')
             const dataClass = await axios.get(`v1/builder/form/lop-hoc/data`, {
                 headers: {
-                    token: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`
                 }
             })
             const listClass = dataClass.data.data?.map((classValue: ClassValue) => {
@@ -65,7 +66,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                 const data: IData = await getStudentById({ studentId })
                 setStudentInfo({
                     maSinhVien: data?.maSinhVien,
-                    moTa: data?.moTa,
+                    // moTa: data?.moTa,
                     tenSinhVien: data?.tenSinhVien,
                     classId: data.lop.id
                 })
@@ -76,12 +77,11 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
     }, [studentId])
 
     
-
     const handleCreate = (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
         if(studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
             try {
                 e.preventDefault()
-                const token = document.cookie.split("=")[1]
+                const token = localStorage.getItem('token')
     
                 axios.post("v1/builder/form/sinh-vien/data", {
                     maSinhVien: studentInfo.maSinhVien,
@@ -89,16 +89,18 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                     lop: {
                         id: studentInfo.classId
                     },
-                    moTa: studentInfo.moTa
+                    // moTa: studentInfo.moTa
                 }, {
                     headers: {
-                        token: `Bearer ${token}`
+                        Authorization: `Bearer ${token}`
                     }
                 })
-                navigate("/management/student")
+                navigate("/administrator/builder/data/sinh-vien.html")
             } catch (error) {
                 console.log({ error });
             }
+        } else {
+            setIsError(true)
         }
     }
 
@@ -106,7 +108,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
         if(studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
             try {
                 e.preventDefault()
-                const token = document.cookie.split("=")[1]
+                const token = localStorage.getItem('token')
     
                 axios.put("v1/builder/form/sinh-vien/data", {
                     id: Number(studentId),
@@ -115,16 +117,18 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                     lop: {
                         id: studentInfo.classId
                     },
-                    moTa: studentInfo.moTa
+                    // moTa: studentInfo.moTa
                 }, {
                     headers: {
-                        token: `Bearer ${token}`
+                        Authorization: `Bearer ${token}`
                     }
                 })
-                navigate("/management/student")
+                navigate("/administrator/builder/data/sinh-vien.html")
             } catch (error) {
                 console.log({ error });
             }
+        } else {
+            setIsError(true)
         }
     }
 
@@ -149,6 +153,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                             maSinhVien: e.target.value
                         })}
                     />
+                    {isError && !studentInfo.maSinhVien ? <p className="text-sm text-red-500">Mã sinh viên đang trống</p> : ""}
                 </div>
                 <div className="w-full">
                     <label htmlFor="tenSinhVien" className="block mb-2 text-sm font-medium text-gray-900">Tên sinh viên</label>
@@ -163,9 +168,10 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                             tenSinhVien: e.target.value
                         })}
                     />
+                    {isError && !studentInfo.tenSinhVien ? <p className="text-sm text-red-500">Tên sinh viên đang trống</p> : ""}
                 </div>
             </div>
-            <div className="mb-5">
+            {/* <div className="mb-5">
                 <label htmlFor="message" className="block mb-2 text-sm font-medium text-gray-900">Mô tả</label>
                 <textarea
                     id="message"
@@ -177,7 +183,8 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                         moTa: e.target.value
                     })}
                 >{studentInfo.moTa}</textarea>
-            </div>
+                {isError && !studentInfo.moTa ? <p className="text-sm text-red-500">Mô tả sinh viên đang trống</p> : ""}
+            </div> */}
 
             <div className="mb-5">
                 <label htmlFor="countries" className="block mb-2 text-sm font-medium text-gray-900">Lớp</label>
@@ -200,8 +207,8 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                         ))
                     }
                 </select>
+                {isError && !studentInfo.classId ? <p className="text-sm text-red-500">Lớp đang trống</p> : ""}
             </div>
-
             <button
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
                 onClick={(e) => studentId ? handleUpdate(e) : handleCreate(e)}
@@ -210,7 +217,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
             </button>
             <button
                 className="text-white bg-yellow-300 hover:bg-yellow-500 focus:ring-4 focus:outline-none focus:ring-yebg-yellow-200 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center ml-2"
-                onClick={() => navigate("/management/class")}
+                onClick={() => navigate("/administrator/builder/data/sinh-vien.html")}
             >
                 Huỷ
             </button>

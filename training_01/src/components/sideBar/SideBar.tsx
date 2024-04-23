@@ -1,55 +1,74 @@
 import axios from "axios"
-import { useNavigate, useLocation } from "react-router-dom"
+import { Dispatch, useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 
-const listManagements = [
-    {
-        id: 1,
-        name: "Danh mục cấu hình",
-        sufixPath: "categories-config",
-        path: "/management/categories-config"
-    },
-    {
-        id: 2,
-        name: "Lớp học",
-        sufixPath: "class",
-        path: "/management/class"
-    },
-    {
-        id: 3,
-        name: "Sinh viên",
-        sufixPath: "student",
-        path: "/management/student"
-    },
-]
+interface IMenuItem {
+    id: number
+    name: string
+    pageTitle: string
+    url: string
+}
 
-const AppBar = () => {
+const AppBar = ({setIsHiddenSideBar}: {setIsHiddenSideBar: Dispatch<React.SetStateAction<boolean>>}) => {
     const navigate = useNavigate()
     const location = useLocation()
+    const [menuItems, setMenuItems] = useState<IMenuItem[]>([])
 
     const handleLogout = async () => {
         try {
-            await axios.post("v2/auth/logout")
-            document.cookie = "token" + "=; expires=" + +new Date
+            const token = localStorage.getItem("token")
+            await axios.post("v2/auth/logout", {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            localStorage.setItem("token", "")
             navigate("/auth/login")
         } catch (error) {
             console.log({ error });
-
         }
     }
 
+    useEffect(() => {
+        const hanldeGetData = async () => {
+            const token = localStorage.getItem("token")
+            const res = await axios.get("v2/menu/my-menu", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            setMenuItems(res.data.data)
+        }
+
+
+        hanldeGetData()
+    }, [])
+
+    useEffect(() => {
+        if (location.pathname.includes("create") || location.pathname.includes("edit")) {
+            setIsHiddenSideBar(true)
+        } else {
+            setIsHiddenSideBar(false)
+        }
+    }, [location.pathname, setIsHiddenSideBar])
+
+
+
     return (
-        <div className="flex flex-col pb-2 h-full">
+        <div className={`flex-col pb-2 h-full flex`}>
             <h2 className="text-3xl font-semibold text-center py-5">SideBar</h2>
             <div className="flex-1">
                 <ul className="px-1.5 space-y-2">
                     {
-                        listManagements.map(item => (
+                        menuItems.map(item => (
                             <li
-                                className={`py-2.5 px-4 hover:bg-gray-100 rounded-lg cursor-pointer ${location.pathname.includes(item.sufixPath) ? "bg-gray-100" : ''}`}
+                                className={`
+                                    py-2.5 px-4 hover:bg-gray-100 rounded-lg cursor-pointer 
+                                    ${location.pathname.includes(item.url) ? 'bg-gray-100' : ''}`}
                                 key={item.id}
-                                onClick={() => navigate(item.path)}
+                                onClick={() => navigate(item.url)}
                             >
-                                {item.name}
+                                {item.pageTitle}
                             </li>
                         ))
                     }

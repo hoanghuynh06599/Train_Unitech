@@ -11,10 +11,10 @@ interface IData {
 
 
 const getClassById = async ({ classId }: { classId: string }) => {
-    const token = document.cookie.split("=")[1]
+    const token = localStorage.getItem('token')
     const res = await axios.get(`v1/builder/form/lop-hoc/data/${classId}`, {
         headers: {
-            token: `Bearer ${token}`
+            Authorization: `Bearer ${token}`
         }
     });
 
@@ -33,6 +33,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
         tenLop: "",
         moTa: ""
     })
+    const [isError, setIsError] = useState(false)
 
     useEffect(() => {
         if (classId) {
@@ -54,17 +55,19 @@ const FormClass = ({ classId }: { classId?: string }) => {
         if(classInfo.maLop && classInfo.moTa && classInfo.tenLop) {
             try {
                 e.preventDefault()
-                const token = document.cookie.split("=")[1]
+                const token = localStorage.getItem('token')
     
                 axios.post("v1/builder/form/lop-hoc/data", classInfo, {
                     headers: {
-                        token: `Bearer ${token}`
+                        Authorization: `Bearer ${token}`
                     }
                 })
-                navigate("/management/class")
+                navigate("/administrator/builder/data/lop-hoc.html")
             } catch (error) {
                 console.log({ error });
             }
+        } else {
+            setIsError(true)
         }
     }
 
@@ -72,17 +75,19 @@ const FormClass = ({ classId }: { classId?: string }) => {
         if(classInfo.maLop && classInfo.moTa && classInfo.tenLop) {
             try {
                 e.preventDefault()
-                const token = document.cookie.split("=")[1]
+                const token = localStorage.getItem('token')
     
                 axios.put("v1/builder/form/lop-hoc/data", {...classInfo, id: Number(classId)}, {
                     headers: {
-                        token: `Bearer ${token}`
+                        Authorization: `Bearer ${token}`
                     }
                 })
-                navigate("/management/class")
+                navigate("/administrator/builder/data/lop-hoc.html")
             } catch (error) {
                 console.log({ error });
             }
+        } else {
+            setIsError(true)
         }
     }
 
@@ -107,6 +112,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
                             maLop: e.target.value
                         })}
                     />
+                    {isError && !classInfo.maLop ? <p className="text-sm text-red-500">Mã lớp đang trống</p> : ""}
                 </div>
                 <div className="w-full">
                     <label htmlFor="tenLop" className="block mb-2 text-sm font-medium text-gray-900">Tên lớp</label>
@@ -121,6 +127,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
                             tenLop: e.target.value
                         })}
                     />
+                    {isError && !classInfo.tenLop ? <p className="text-sm text-red-500">Tên lớp đang trống</p> : ""}
                 </div>
             </div>
             <div className="mb-5">
@@ -135,6 +142,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
                         moTa: e.target.value
                     })}
                 >{classInfo.moTa}</textarea>
+                {isError && !classInfo.moTa ? <p className="text-sm text-red-500">Mô tả đang trống</p> : ""}
             </div>
             <button
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
@@ -144,7 +152,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
             </button>
             <button
                 className="text-white bg-yellow-300 hover:bg-yellow-500 focus:ring-4 focus:outline-none focus:ring-yebg-yellow-200 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center ml-2"
-                onClick={() => navigate("/management/class")}
+                onClick={() => navigate("/administrator/builder/data/lop-hoc.html")}
             >
                 Huỷ
             </button>

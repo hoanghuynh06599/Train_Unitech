@@ -11,16 +11,15 @@ interface IData {
 }
 
 const getCategories = async ({ query }: { query?: string }) => {
-    const token = document.cookie.split("=")[1]
+    const token = localStorage.getItem('token')
     const res = await axios.get(`v1/builder/form/cau-hinh/data${query ? `?name=${query}` : ""}`, {
         headers: {
-            token: `Bearer ${token}`
+            Authorization: `Bearer ${token}`
         }
     })
     if (!res.data) {
         throw new Error("Can not get categories")
     }
-    console.log(res.data);
 
     return res.data.data
 }
@@ -42,11 +41,11 @@ const ListCategories = () => {
 
     const handleDelete = async ({ cateId }: { cateId: string }) => {
         if (confirm(`Bạn muốn xoá danh mục này chứ ?`)) {
-            const token = document.cookie.split("=")[1]
+            const token = localStorage.getItem('token')
             const res = await axios.delete(`v1/builder/form/cau-hinh/data`, {
                 data: [cateId],
                 headers: {
-                    token: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`
                 }
             })
             if (!res.data) {

@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom"
 
 const LoginPage = () => {
     const [userInfo, setUserInfo] = useState({
-        username: "",
-        password: "",
+        username: "admin",
+        password: "Abc@1234",
         remember: false
     })
     const [isLoginFailed, setIsLoginFailed] = useState(false)
@@ -13,18 +13,14 @@ const LoginPage = () => {
 
     const handleLogin = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
         e.preventDefault()
-        if(userInfo.password && userInfo.username) {
+        if (userInfo.password && userInfo.username) {
             try {
                 const res = await axios.post("v2/auth/login", userInfo)
-                console.log({ res });
-                if(!res.data.status) {
+                if (!res.data.status) {
                     setIsLoginFailed(true)
                 } else {
-                    const date = new Date();
-                    date.setTime(date.getTime() + (7*24*60*60*1000));
-                    const expires =  date.toUTCString()
-                    document.cookie = `token=${res.data.data.token}; expires=${expires}`
-                    navigate("/management/categories-config")
+                    localStorage.setItem("token", res.data.data.token)
+                    navigate("/administrator/builder/data/lop-hoc.html")
                 }
             } catch (error) {
                 console.log({ error });

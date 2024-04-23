@@ -23,13 +23,13 @@ const ClassPage = () => {
                         <button
                             type="button"
                             className="focus:outline-none text-white bg-green-400 hover:bg-green-500 focus:ring-4 focus:ring-green-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2"
-                            onClick={() => navigate("/management/create/class")}
+                            onClick={() => navigate("/administrator/builder/data/create/class")}
                         >
                             Tạo mới
                         </button>
                     </div>
 
-                    <div className="flex justify-end pr-6 hidden">
+                    <div className="flex justify-end pr-6">
                         <div className="max-w-md min-w-[24rem]">
                             <label htmlFor="default-search" className="mb-2 text-sm font-medium text-gray-900 sr-only">Search</label>
                             <div className="relative">
@@ -42,7 +42,7 @@ const ClassPage = () => {
                                     type="search" 
                                     id="default-search" 
                                     className="block w-full p-3 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="Search Mockups, Logos..." 
+                                    placeholder="Tên lớp" 
                                     required 
                                     value={searchValue}
                                     onChange={(e) => setSearchValue(e.target.value)}
