@@ -1,42 +1,19 @@
-import axios from "axios"
 import { MouseEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchContext } from "../../hooks/useSearchContext";
+import { requestWithToken } from "../../hooks/useRequest";
+import { ClassValue, IError, IResStudentData } from "../../services/interfaces";
+import { getClass } from "../class/ListClass";
 
-interface IData {
-    id: string
-    maSinhVien: string,
-    tenSinhVien: string,
-    moTa: string
-    lop: {
-        id: number,
-    }
-}
-
-interface ClassValue {
-    id: number
-    tenLop: string
-}
-
-interface IError {
-    response: {
-        status: number
-    }
-}
 
 const getStudentById = async ({ studentId }: { studentId: string }) => {
-    const token = localStorage.getItem('token')
-    const res = await axios.get(`v1/builder/form/sinh-vien/data/${studentId}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
+    const res = await requestWithToken({
+        url: `v1/builder/form/sinh-vien/data/${studentId}`,
+        method: "GET",
+        typeAuthorized: "Authorization",
+    })
 
-    if (!res.data) {
-        throw new Error("Error when get student by Id")
-    }
-
-    return res.data.data
+    return res.data
 }
 
 const FormStudent = ({ studentId }: { studentId?: string }) => {
@@ -66,13 +43,9 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
     useEffect(() => {
         const getClassData = async () => {
             try {
-                const token = localStorage.getItem('token')
-                const dataClass = await axios.get(`v1/builder/form/lop-hoc/data`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-                const listClass = dataClass.data.data?.map((classValue: ClassValue) => {
+                const dataClass = await getClass({ page: 1 })
+
+                const listClass = dataClass.data.map((classValue: ClassValue) => {
                     return {
                         id: classValue.id,
                         tenLop: classValue.tenLop
@@ -80,19 +53,18 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                 })
                 setStudentClass(listClass)
             } catch (error) {
-                if((error as IError).response.status === 401) {
+                if ((error as IError).response.status === 401) {
                     navigate("/auth/login")
                 }
             }
         }
-        
+
         getClassData()
         if (studentId) {
             const getData = async () => {
-                const data: IData = await getStudentById({ studentId })
+                const data: IResStudentData = await getStudentById({ studentId })
                 setStudentInfo({
                     maSinhVien: data?.maSinhVien,
-                    // moTa: data?.moTa,
                     tenSinhVien: data?.tenSinhVien,
                     classId: data.lop.id
                 })
@@ -107,17 +79,16 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
         if (studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
             try {
                 e.preventDefault()
-                const token = localStorage.getItem('token')
-
-                await axios.post("v1/builder/form/sinh-vien/data", {
-                    maSinhVien: studentInfo.maSinhVien,
-                    tenSinhVien: studentInfo.tenSinhVien,
-                    lop: {
-                        id: studentInfo.classId
-                    },
-                }, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
+                await requestWithToken({
+                    url: "v1/builder/form/sinh-vien/data",
+                    method: "POST",
+                    typeAuthorized: "Authorization",
+                    body: {
+                        maSinhVien: studentInfo.maSinhVien,
+                        tenSinhVien: studentInfo.tenSinhVien,
+                        lop: {
+                            id: studentInfo.classId
+                        },
                     }
                 })
                 navigate("/administrator/builder/data/sinh-vien.html")
@@ -131,7 +102,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                             maSinhVien: "Mã sinh viên bị trùng"
                         }
                     })
-                } else if((error as IError).response.status === 401) {
+                } else if ((error as IError).response.status === 401) {
                     navigate("/auth/login")
                 }
             }
@@ -151,19 +122,17 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
         if (studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
             try {
                 e.preventDefault()
-                const token = localStorage.getItem('token')
-
-                await axios.put("v1/builder/form/sinh-vien/data", {
-                    id: Number(studentId),
-                    maSinhVien: studentInfo.maSinhVien,
-                    tenSinhVien: studentInfo.tenSinhVien,
-                    lop: {
-                        id: studentInfo.classId
-                    },
-                    // moTa: studentInfo.moTa
-                }, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
+                await requestWithToken({
+                    url: "v1/builder/form/sinh-vien/data",
+                    method: "PUT",
+                    typeAuthorized: "Authorization",
+                    body: {
+                        id: Number(studentId),
+                        maSinhVien: studentInfo.maSinhVien,
+                        tenSinhVien: studentInfo.tenSinhVien,
+                        lop: {
+                            id: studentInfo.classId
+                        },
                     }
                 })
                 navigate("/administrator/builder/data/sinh-vien.html")
@@ -177,7 +146,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                             maSinhVien: "Mã sinh viên bị trùng"
                         }
                     })
-                } else if((error as IError).response.status === 401) {
+                } else if ((error as IError).response.status === 401) {
                     navigate("/auth/login")
                 }
             }
@@ -206,7 +175,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                         type="text"
                         id="maSinhVien"
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                        placeholder="name@flowbite.com"
+                        placeholder="Tên sinh viên"
                         required
                         value={studentInfo.maSinhVien}
                         onChange={(e) => setStudentInfo({

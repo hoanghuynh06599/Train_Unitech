@@ -1,30 +1,17 @@
-import axios from "axios"
 import { MouseEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchContext } from "../../hooks/useSearchContext";
-
-interface IData {
-    id: string
-    maLop: string,
-    tenLop: string,
-    moTa: string
-}
-
-interface IError {
-    response: {
-        status: number
-    }
-}
-
+import { requestWithToken } from "../../hooks/useRequest";
+import { IClassData, IError } from "../../services/interfaces";
 
 const getClassById = async ({ classId }: { classId: string }) => {
-    const token = localStorage.getItem('token')
-    const res = await axios.get(`v1/builder/form/lop-hoc/data/${classId}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-    return res.data.data
+    const res = await requestWithToken({
+        url: `v1/builder/form/lop-hoc/data/${classId}`,
+        method: "GET",
+        typeAuthorized: "Authorization",
+    })
+
+    return res.data
 }
 
 const FormClass = ({ classId }: { classId?: string }) => {
@@ -48,12 +35,11 @@ const FormClass = ({ classId }: { classId?: string }) => {
         searchContext?.setClassSearch("")
     }, [])
 
-
     useEffect(() => {
         if (classId) {
             const getData = async () => {
                 try {
-                    const data: IData = await getClassById({ classId })
+                    const data: IClassData = await getClassById({ classId })
                     setClassInfo({
                         maLop: data.maLop,
                         moTa: data.moTa,
@@ -69,20 +55,20 @@ const FormClass = ({ classId }: { classId?: string }) => {
             }
             getData()
         }
-    }, [classId])
+    }, [classId, navigate])
 
 
     const handleCreate = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
         if (classInfo.maLop && classInfo.tenLop) {
             try {
                 e.preventDefault()
-                const token = localStorage.getItem('token')
-
-                await axios.post("v1/builder/form/lop-hoc/data", classInfo, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                await requestWithToken({
+                    url: "v1/builder/form/lop-hoc/data",
+                    method: "POST",
+                    typeAuthorized: "Authorization",
+                    body: classInfo
                 })
+
                 navigate("/administrator/builder/data/lop-hoc.html")
             } catch (error) {
                 if ((error as IError).response.status === 400) {
@@ -112,13 +98,13 @@ const FormClass = ({ classId }: { classId?: string }) => {
         if (classInfo.maLop && classInfo.tenLop) {
             try {
                 e.preventDefault()
-                const token = localStorage.getItem('token')
-
-                await axios.put("v1/builder/form/lop-hoc/data", { ...classInfo, id: Number(classId) }, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                await requestWithToken({
+                    url: "v1/builder/form/lop-hoc/data",
+                    method: "PUT",
+                    typeAuthorized: "Authorization",
+                    body: { ...classInfo, id: Number(classId) }
                 })
+
                 navigate("/administrator/builder/data/lop-hoc.html")
             } catch (error) {
                 if ((error as IError).response.status === 400) {
@@ -157,7 +143,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
                         type="text"
                         id="maLop"
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                        placeholder="name@flowbite.com"
+                        placeholder="Tên lớp"
                         required
                         value={classInfo.maLop}
                         onChange={(e) => setClassInfo({

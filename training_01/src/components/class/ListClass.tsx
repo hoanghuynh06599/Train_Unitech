@@ -1,59 +1,27 @@
-import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSearchContext } from "../../hooks/useSearchContext"
+import { requestWithToken } from "../../hooks/useRequest"
+import {  IClassData, IError, IPaging } from "../../services/interfaces"
+import { range } from "../../utils/commonUtils"
 
-interface IData {
-    id: string
-    maLop: string,
-    tenLop: string,
-    moTa: string
-}
-
-interface IPaging {
-    page: number
-    totalPage: number,
-    allowNext: boolean,
-    allowPrev: boolean,
-
-}
-
-interface IError {
-    response: {
-        status: number
-    }
-}
-
-
-const range = ({ size }: { size?: number }) => {
-    if (size) {
-        const itemsInRange = []
-        for (let i = 1; i <= size; i++) {
-            itemsInRange.push(i)
-        }
-        return itemsInRange
-    }
-}
-
-const getClass = async ({ query, page }: { query?: string, page: number }) => {
-    const token = localStorage.getItem('token')
-    const res = await axios.get(`v1/builder/form/lop-hoc/data?page=${page}&pageSize=5&tenLop_like=${query ?? ""}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
+export const getClass = async ({ query, page, limit = 1000 }: { query?: string, page: number, limit?: number }) => {
+    const res = await requestWithToken({
+        url: `v1/builder/form/lop-hoc/data?page=${page}&pageSize=${limit}&tenLop_like=${query ?? ""}`,
+        method: "GET",
+        typeAuthorized: "Authorization",
     })
+
     if (!res.data) {
         throw new Error("Can not get class")
     }
-
-    return res.data
+    return res
 }
 
 const ClassPage = () => {
     const navigate = useNavigate()
     const [classData, setClassData] = useState([])
     const searchContext = useSearchContext()
-    const [countReload, setCountReload] = useState(0)
     const [paging, setPaging] = useState<IPaging>()
     const [currPage, setCurrPage] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
@@ -62,7 +30,7 @@ const ClassPage = () => {
         const getData = async () => {
             try {
                 setIsLoading(true)
-                const data = await getClass({ query: searchContext?.classSearch, page: currPage })
+                const data = await getClass({ query: searchContext?.classSearch, page: currPage, limit: 5 })
                 setPaging({
                     allowNext: data?.pagination?.allowNext,
                     allowPrev: data?.pagination?.allowPrev,
@@ -80,7 +48,7 @@ const ClassPage = () => {
             }
         }
         getData()
-    }, [searchContext?.classSearch, countReload, currPage])
+    }, [searchContext?.classSearch, currPage])
 
 
     const handleSetPage = ({ page }: { page: number }) => {
@@ -107,19 +75,18 @@ const ClassPage = () => {
     const handleDelete = async ({ classId }: { classId: string }) => {
         if (confirm(`Bạn muốn xoá lớp này chứ ?`)) {
             try {
-                const token = localStorage.getItem('token')
-                const res = await axios.delete(`v1/builder/form/lop-hoc/data`, {
-                    data: [classId],
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                const res = await requestWithToken({
+                    url: `v1/builder/form/lop-hoc/data`,
+                    method: "DELETE",
+                    typeAuthorized: "Authorization",
+                    body: [classId]
                 })
-                if (!res.data) {
+
+                if (!res.status) {
                     throw new Error("Can not delete class")
                 }
 
-                setCountReload(countReload + 1)
-                return res.data
+                setCurrPage(1)
             } catch (error) {
                 if ((error as IError).response.status === 401) {
                     navigate("/auth/login")
@@ -154,7 +121,7 @@ const ClassPage = () => {
                 </thead>
                 <tbody>
                     {
-                        classData?.map((classValue: IData) => (
+                        classData?.map((classValue: IClassData) => (
                             <tr className="odd:bg-white even:bg-gray-50 border-b" key={classValue.id}>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {classValue.id}

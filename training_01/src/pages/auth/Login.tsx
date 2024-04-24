@@ -1,25 +1,37 @@
-import axios from "axios"
 import { MouseEvent, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { request } from "../../hooks/useRequest"
 
 const LoginPage = () => {
+    // const [userInfo, setUserInfo] = useState({
+    //     username: "admin",
+    //     password: "Abc@1234",
+    //     remember: false
+    // })
     const [userInfo, setUserInfo] = useState({
-        username: "admin",
-        password: "Abc@1234",
+        username: "",
+        password: "",
         remember: false
     })
+
     const [isLoginFailed, setIsLoginFailed] = useState(false)
+    
     const navigate = useNavigate()
 
     const handleLogin = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
         e.preventDefault()
         if (userInfo.password && userInfo.username) {
             try {
-                const res = await axios.post("v2/auth/login", userInfo)
-                if (!res.data.status) {
+                const res = await request({
+                    url: "v2/auth/login",
+                    body: userInfo,
+                    method: "POST",
+                })
+
+                if(!res.status) {
                     setIsLoginFailed(true)
                 } else {
-                    localStorage.setItem("token", res.data.data.token)
+                    localStorage.setItem("token", res.data.token)
                     navigate("/administrator/builder/data/lop-hoc.html")
                 }
             } catch (error) {

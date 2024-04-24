@@ -1,58 +1,27 @@
-import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSearchContext } from "../../hooks/useSearchContext"
-
-interface IData {
-    id: string
-    maSinhVien: string,
-    tenSinhVien: string,
-    moTa: string
-}
-
-interface IError {
-    response: {
-        status: number
-    }
-}
-
-interface IPaging {
-    page: number
-    totalPage: number,
-    allowNext: boolean,
-    allowPrev: boolean,
-
-}
-
-const range = ({ size }: { size?: number }) => {
-    if (size) {
-        const itemsInRange = []
-        for (let i = 1; i <= size; i++) {
-            itemsInRange.push(i)
-        }
-        return itemsInRange
-    }
-}
+import { requestWithToken } from "../../hooks/useRequest"
+import { IError, IPaging, IStudentData } from "../../services/interfaces"
+import { range } from "../../utils/commonUtils"
 
 const getStudent = async ({ query, page }: { query?: string, page: number }) => {
-    const token = localStorage.getItem('token')
-    const res = await axios.get(`v1/builder/form/sinh-vien/data?page=${page}&pageSize=5&tenSinhVien_like=${query ?? ""}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
+    const res = await requestWithToken({
+        url: `v1/builder/form/sinh-vien/data?page=${page}&pageSize=5&tenSinhVien_like=${query ?? ""}`,
+        method: "GET",
+        typeAuthorized: "Authorization",
     })
-    if (!res.data.data) {
+
+    if (!res.data) {
         throw new Error("Can not get student")
     }
-
-    return res.data
+    return res
 }
 
 const StudentPage = () => {
     const navigate = useNavigate()
     const [studentData, setStudentData] = useState([])
     const searchContext = useSearchContext()
-    const [countReload, setCountReload] = useState(0)
     const [paging, setPaging] = useState<IPaging>()
     const [currPage, setCurrPage] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
@@ -79,7 +48,7 @@ const StudentPage = () => {
             }
         }
         getData()
-    }, [searchContext?.studentSearch, countReload, currPage])
+    }, [searchContext?.studentSearch, currPage])
 
     const handleSetPage = ({ page }: { page: number }) => {
         let direction;
@@ -103,15 +72,19 @@ const StudentPage = () => {
 
     const handleDelete = async ({ studentId }: { studentId: string }) => {
         if (confirm(`Bạn muốn xoá học sinh này chứ ?`)) {
-            const token = localStorage.getItem('token')
             try {
-                const res = await axios.delete(`v1/builder/form/sinh-vien/data`, {
-                    data: [studentId],
-                    headers: {
-                        Token: `Bearer ${token}`
-                    }
+                const res = await requestWithToken({
+                    url: `v1/builder/form/sinh-vien/data`,
+                    method: "DELETE",
+                    typeAuthorized: "Authorization",
+                    body: [studentId]
                 })
-                setCountReload(countReload + 1)
+
+                if (!res.status) {
+                    throw new Error("Can not delete student")
+                }
+
+                setCurrPage(1)
                 return res.data
             } catch (error) {
                 if((error as IError).response.status === 401) {
@@ -144,7 +117,7 @@ const StudentPage = () => {
                 </thead>
                 <tbody>
                     {
-                        studentData?.map((student: IData) => (
+                        studentData?.map((student: IStudentData) => (
                             <tr className="odd:bg-white even:bg-gray-50 border-b" key={student.id}>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {student.id}

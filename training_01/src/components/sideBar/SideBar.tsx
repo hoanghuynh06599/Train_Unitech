@@ -1,13 +1,8 @@
-import axios from "axios"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
+import { IError, IMenuItem } from "../../services/interfaces"
+import { requestWithToken } from "../../hooks/useRequest"
 
-interface IMenuItem {
-    id: number
-    name: string
-    pageTitle: string
-    url: string
-}
 
 const AppBar = () => {
     const navigate = useNavigate()
@@ -16,31 +11,40 @@ const AppBar = () => {
 
     const handleLogout = async () => {
         try {
-            const token = localStorage.getItem("token")
-            await axios.post("v2/auth/logout", {}, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+            await requestWithToken({
+                url: "v2/auth/logout",
+                method: "POST",
+                typeAuthorized: "Authorization"
             })
+
             localStorage.setItem("token", "")
             navigate("/auth/login")
         } catch (error) {
-            console.log({ error });
+            if ((error as IError).response.status === 401) {
+                navigate("/auth/login")
+            } else {
+                console.log({ error });
+            }
         }
     }
 
     useEffect(() => {
         const hanldeGetData = async () => {
-            const token = localStorage.getItem("token")
-            const res = await axios.get("v2/menu/my-menu", {
-                headers: {
-                    Authorization: `Bearer ${token}`
+            try {
+                const res = await requestWithToken({
+                    url: "v2/menu/my-menu",
+                    method: "GET",
+                    typeAuthorized: "Authorization",
+                })
+                setMenuItems(res.data)
+            } catch (error) {
+                if ((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                } else {
+                    console.log({ error });
                 }
-            })
-            setMenuItems(res.data.data)
+            }
         }
-
-
         hanldeGetData()
     }, [])
 
