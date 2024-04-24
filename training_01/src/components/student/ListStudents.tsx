@@ -10,6 +10,12 @@ interface IData {
     moTa: string
 }
 
+interface IError {
+    response: {
+        status: number
+    }
+}
+
 interface IPaging {
     page: number
     totalPage: number,
@@ -30,7 +36,7 @@ const range = ({ size }: { size?: number }) => {
 
 const getStudent = async ({ query, page }: { query?: string, page: number }) => {
     const token = localStorage.getItem('token')
-    const res = await axios.get(`v1/builder/form/sinh-vien/data?page=${page}&pageSize=10&tenSinhVien_like=${query}`, {
+    const res = await axios.get(`v1/builder/form/sinh-vien/data?page=${page}&pageSize=5&tenSinhVien_like=${query ?? ""}`, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -54,19 +60,26 @@ const StudentPage = () => {
     useEffect(() => {
         const getData = async () => {
             setIsLoading(true)
-            setStudentData([])
-            const data = await getStudent({ query: searchContext?.cateConfigSearch, page: currPage })
-            setPaging({
-                allowNext: data?.pagination?.allowNext,
-                allowPrev: data?.pagination?.allowPrev,
-                page: data?.pagination?.page,
-                totalPage: Math.ceil(data?.pagination?.total / data?.pagination?.pageSize)
-            })
-            setStudentData(data.data)
-            setIsLoading(false)
+            try {
+                setStudentData([])
+                const data = await getStudent({ query: searchContext?.studentSearch, page: currPage })
+                setPaging({
+                    allowNext: data?.pagination?.allowNext,
+                    allowPrev: data?.pagination?.allowPrev,
+                    page: data?.pagination?.page,
+                    totalPage: Math.ceil(data?.pagination?.total / data?.pagination?.pageSize)
+                })
+                setStudentData(data.data)
+                setIsLoading(false)
+            } catch (error) {
+                setIsLoading(false)
+                if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
+            }
         }
         getData()
-    }, [searchContext?.cateConfigSearch, countReload, currPage])
+    }, [searchContext?.studentSearch, countReload, currPage])
 
     const handleSetPage = ({ page }: { page: number }) => {
         let direction;
@@ -91,17 +104,20 @@ const StudentPage = () => {
     const handleDelete = async ({ studentId }: { studentId: string }) => {
         if (confirm(`Bạn muốn xoá học sinh này chứ ?`)) {
             const token = localStorage.getItem('token')
-            const res = await axios.delete(`v1/builder/form/sinh-vien/data`, {
-                data: [studentId],
-                headers: {
-                    Token: `Bearer ${token}`
+            try {
+                const res = await axios.delete(`v1/builder/form/sinh-vien/data`, {
+                    data: [studentId],
+                    headers: {
+                        Token: `Bearer ${token}`
+                    }
+                })
+                setCountReload(countReload + 1)
+                return res.data
+            } catch (error) {
+                if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
                 }
-            })
-            if (!res.data) {
-                throw new Error("Can not delete class")
             }
-            setCountReload(countReload + 1)
-            return res.data
         }
     }
 

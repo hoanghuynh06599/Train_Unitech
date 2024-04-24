@@ -1,5 +1,5 @@
 import axios from "axios"
-import { Dispatch, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 interface IMenuItem {
@@ -9,7 +9,7 @@ interface IMenuItem {
     url: string
 }
 
-const AppBar = ({setIsHiddenSideBar}: {setIsHiddenSideBar: Dispatch<React.SetStateAction<boolean>>}) => {
+const AppBar = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const [menuItems, setMenuItems] = useState<IMenuItem[]>([])
@@ -43,15 +43,6 @@ const AppBar = ({setIsHiddenSideBar}: {setIsHiddenSideBar: Dispatch<React.SetSta
 
         hanldeGetData()
     }, [])
-
-    useEffect(() => {
-        if (location.pathname.includes("create") || location.pathname.includes("edit")) {
-            setIsHiddenSideBar(true)
-        } else {
-            setIsHiddenSideBar(false)
-        }
-    }, [location.pathname, setIsHiddenSideBar])
-
 
 
     return (

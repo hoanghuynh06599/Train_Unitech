@@ -1,12 +1,19 @@
 import axios from "axios"
 import { MouseEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSearchContext } from "../../hooks/useSearchContext";
 
 interface IData {
     id: string
     maLop: string,
     tenLop: string,
     moTa: string
+}
+
+interface IError {
+    response: {
+        status: number
+    }
 }
 
 
@@ -17,79 +24,125 @@ const getClassById = async ({ classId }: { classId: string }) => {
             Authorization: `Bearer ${token}`
         }
     });
-
-    if (!res.data.data) {
-        throw new Error("Error when get class by Id")
-    }
-
     return res.data.data
 }
 
 const FormClass = ({ classId }: { classId?: string }) => {
     const [isLoading, setIsLoading] = useState(classId ? true : false)
+    const searchContext = useSearchContext()
     const navigate = useNavigate()
     const [classInfo, setClassInfo] = useState({
         maLop: "",
         tenLop: "",
         moTa: ""
     })
-    const [isError, setIsError] = useState(false)
+    const [isError, setIsError] = useState({
+        state: false,
+        messages: {
+            maLop: "",
+            tenLop: ""
+        }
+    })
+
+    useEffect(() => {
+        searchContext?.setClassSearch("")
+    }, [])
+
 
     useEffect(() => {
         if (classId) {
             const getData = async () => {
-                const data: IData = await getClassById({ classId })
-                setClassInfo({
-                    maLop: data.maLop,
-                    moTa: data.moTa,
-                    tenLop: data.tenLop
-                })
-                setIsLoading(false)
+                try {
+                    const data: IData = await getClassById({ classId })
+                    setClassInfo({
+                        maLop: data.maLop,
+                        moTa: data.moTa,
+                        tenLop: data.tenLop
+                    })
+                    setIsLoading(false)
+                } catch (error) {
+                    setIsLoading(false)
+                    if((error as IError).response.status === 401) {
+                        navigate("/auth/login")
+                    }
+                }
             }
             getData()
         }
     }, [classId])
 
 
-    const handleCreate = (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
-        if(classInfo.maLop && classInfo.moTa && classInfo.tenLop) {
+    const handleCreate = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
+        if (classInfo.maLop && classInfo.tenLop) {
             try {
                 e.preventDefault()
                 const token = localStorage.getItem('token')
-    
-                axios.post("v1/builder/form/lop-hoc/data", classInfo, {
+
+                await axios.post("v1/builder/form/lop-hoc/data", classInfo, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 })
                 navigate("/administrator/builder/data/lop-hoc.html")
             } catch (error) {
-                console.log({ error });
+                if ((error as IError).response.status === 400) {
+                    setIsError({
+                        state: true,
+                        messages: {
+                            maLop: "Mã lớp bị trùng",
+                            tenLop: ""
+                        }
+                    })
+                } else if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
             }
         } else {
-            setIsError(true)
+            setIsError({
+                state: true,
+                messages: {
+                    maLop: !classInfo.maLop ? "Mã lớp bị trống" : "",
+                    tenLop: !classInfo.tenLop ? "Tên lớp bị trống" : ""
+                }
+            })
         }
     }
 
-    const handleUpdate = (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
-        if(classInfo.maLop && classInfo.moTa && classInfo.tenLop) {
+    const handleUpdate = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
+        if (classInfo.maLop && classInfo.tenLop) {
             try {
                 e.preventDefault()
                 const token = localStorage.getItem('token')
-    
-                axios.put("v1/builder/form/lop-hoc/data", {...classInfo, id: Number(classId)}, {
+
+                await axios.put("v1/builder/form/lop-hoc/data", { ...classInfo, id: Number(classId) }, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 })
                 navigate("/administrator/builder/data/lop-hoc.html")
             } catch (error) {
-                console.log({ error });
+                if ((error as IError).response.status === 400) {
+                    setIsError({
+                        state: true,
+                        messages: {
+                            maLop: "Mã lớp bị trùng",
+                            tenLop: ""
+                        }
+                    })
+                } else if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
             }
         } else {
-            setIsError(true)
+            setIsError({
+                state: true,
+                messages: {
+                    maLop: !classInfo.maLop ? "Mã lớp bị trống" : "",
+                    tenLop: !classInfo.tenLop ? "Tên lớp bị trống" : ""
+                }
+            })
         }
-    }
+    }    
 
     if (isLoading) {
         return <h1>Loading.....</h1>
@@ -112,7 +165,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
                             maLop: e.target.value
                         })}
                     />
-                    {isError && !classInfo.maLop ? <p className="text-sm text-red-500">Mã lớp đang trống</p> : ""}
+                    {isError.state && isError.messages.maLop ? <p className="text-sm text-red-500">{isError.messages.maLop}</p> : ""}
                 </div>
                 <div className="w-full">
                     <label htmlFor="tenLop" className="block mb-2 text-sm font-medium text-gray-900">Tên lớp</label>
@@ -127,7 +180,7 @@ const FormClass = ({ classId }: { classId?: string }) => {
                             tenLop: e.target.value
                         })}
                     />
-                    {isError && !classInfo.tenLop ? <p className="text-sm text-red-500">Tên lớp đang trống</p> : ""}
+                    {isError.state && isError.messages.tenLop ? <p className="text-sm text-red-500">{isError.messages.tenLop}</p> : ""}
                 </div>
             </div>
             <div className="mb-5">
@@ -142,7 +195,6 @@ const FormClass = ({ classId }: { classId?: string }) => {
                         moTa: e.target.value
                     })}
                 >{classInfo.moTa}</textarea>
-                {isError && !classInfo.moTa ? <p className="text-sm text-red-500">Mô tả đang trống</p> : ""}
             </div>
             <button
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"

@@ -18,6 +18,13 @@ interface IPaging {
 
 }
 
+interface IError {
+    response: {
+        status: number
+    }
+}
+
+
 const range = ({ size }: { size?: number }) => {
     if (size) {
         const itemsInRange = []
@@ -30,7 +37,7 @@ const range = ({ size }: { size?: number }) => {
 
 const getClass = async ({ query, page }: { query?: string, page: number }) => {
     const token = localStorage.getItem('token')
-    const res = await axios.get(`v1/builder/form/lop-hoc/data?page=${page}&pageSize=10&tenLop_like=${query}`, {
+    const res = await axios.get(`v1/builder/form/lop-hoc/data?page=${page}&pageSize=5&tenLop_like=${query ?? ""}`, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -53,21 +60,29 @@ const ClassPage = () => {
 
     useEffect(() => {
         const getData = async () => {
-            setIsLoading(true)
-            const data = await getClass({ query: searchContext?.cateConfigSearch, page: currPage })
-            setPaging({
-                allowNext: data?.pagination?.allowNext,
-                allowPrev: data?.pagination?.allowPrev,
-                page: data?.pagination?.page,
-                totalPage: Math.ceil(data?.pagination?.total / data?.pagination?.pageSize)
-            })
-            setClassData(data.data)
-            setIsLoading(false)
+            try {
+                setIsLoading(true)
+                const data = await getClass({ query: searchContext?.classSearch, page: currPage })
+                setPaging({
+                    allowNext: data?.pagination?.allowNext,
+                    allowPrev: data?.pagination?.allowPrev,
+                    page: data?.pagination?.page,
+                    totalPage: Math.ceil(data?.pagination?.total / data?.pagination?.pageSize)
+                })
+                setClassData(data.data)
+                setIsLoading(false)
+
+            } catch (error) {
+                setIsLoading(false)
+                if ((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
+            }
         }
         getData()
-    }, [searchContext?.cateConfigSearch, countReload, currPage])
+    }, [searchContext?.classSearch, countReload, currPage])
 
-    
+
     const handleSetPage = ({ page }: { page: number }) => {
         let direction;
 
@@ -91,23 +106,29 @@ const ClassPage = () => {
 
     const handleDelete = async ({ classId }: { classId: string }) => {
         if (confirm(`Bạn muốn xoá lớp này chứ ?`)) {
-            const token = localStorage.getItem('token')
-            const res = await axios.delete(`v1/builder/form/lop-hoc/data`, {
-                data: [classId],
-                headers: {
-                    Authorization: `Bearer ${token}`
+            try {
+                const token = localStorage.getItem('token')
+                const res = await axios.delete(`v1/builder/form/lop-hoc/data`, {
+                    data: [classId],
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+                if (!res.data) {
+                    throw new Error("Can not delete class")
                 }
-            })
-            if (!res.data) {
-                throw new Error("Can not delete class")
-            }
 
-            setCountReload(countReload + 1)
-            return res.data
+                setCountReload(countReload + 1)
+                return res.data
+            } catch (error) {
+                if ((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
+            }
         }
     }
 
-    if(isLoading) return <h1>Loading....</h1>
+    if (isLoading) return <h1>Loading....</h1>
 
     return (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg px-6 mt-4">

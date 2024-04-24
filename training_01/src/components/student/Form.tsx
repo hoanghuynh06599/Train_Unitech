@@ -1,6 +1,7 @@
 import axios from "axios"
 import { MouseEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSearchContext } from "../../hooks/useSearchContext";
 
 interface IData {
     id: string
@@ -15,6 +16,12 @@ interface IData {
 interface ClassValue {
     id: number
     tenLop: string
+}
+
+interface IError {
+    response: {
+        status: number
+    }
 }
 
 const getStudentById = async ({ studentId }: { studentId: string }) => {
@@ -34,32 +41,51 @@ const getStudentById = async ({ studentId }: { studentId: string }) => {
 
 const FormStudent = ({ studentId }: { studentId?: string }) => {
     const [isLoading, setIsLoading] = useState(studentId ? true : false)
+    const searchContext = useSearchContext()
     const navigate = useNavigate()
     const [studentClass, setStudentClass] = useState([])
     const [studentInfo, setStudentInfo] = useState({
         maSinhVien: "",
         tenSinhVien: "",
-        // moTa: "",
         classId: 0
     })
-    const [isError, setIsError] = useState(false)
+    const [isError, setIsError] = useState({
+        state: false,
+        messages: {
+            maSinhVien: "",
+            tenSinhVien: "",
+            classId: ""
+        }
+    })
 
     useEffect(() => {
-        const getClassData = async() => {
-            const token = localStorage.getItem('token')
-            const dataClass = await axios.get(`v1/builder/form/lop-hoc/data`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+        searchContext?.setStudentSearch("")
+    }, [])
+
+
+    useEffect(() => {
+        const getClassData = async () => {
+            try {
+                const token = localStorage.getItem('token')
+                const dataClass = await axios.get(`v1/builder/form/lop-hoc/data`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+                const listClass = dataClass.data.data?.map((classValue: ClassValue) => {
+                    return {
+                        id: classValue.id,
+                        tenLop: classValue.tenLop
+                    }
+                })
+                setStudentClass(listClass)
+            } catch (error) {
+                if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
                 }
-            })
-            const listClass = dataClass.data.data?.map((classValue: ClassValue) => {
-                return {
-                    id: classValue.id,
-                    tenLop: classValue.tenLop
-                }
-            })
-            setStudentClass(listClass)
+            }
         }
+        
         getClassData()
         if (studentId) {
             const getData = async () => {
@@ -76,20 +102,19 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
         }
     }, [studentId])
 
-    
-    const handleCreate = (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
-        if(studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
+
+    const handleCreate = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
+        if (studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
             try {
                 e.preventDefault()
                 const token = localStorage.getItem('token')
-    
-                axios.post("v1/builder/form/sinh-vien/data", {
+
+                await axios.post("v1/builder/form/sinh-vien/data", {
                     maSinhVien: studentInfo.maSinhVien,
                     tenSinhVien: studentInfo.tenSinhVien,
                     lop: {
                         id: studentInfo.classId
                     },
-                    // moTa: studentInfo.moTa
                 }, {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -97,20 +122,38 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                 })
                 navigate("/administrator/builder/data/sinh-vien.html")
             } catch (error) {
-                console.log({ error });
+                if ((error as IError).response.status === 400) {
+                    setIsError({
+                        state: true,
+                        messages: {
+                            classId: "",
+                            tenSinhVien: "",
+                            maSinhVien: "Mã sinh viên bị trùng"
+                        }
+                    })
+                } else if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
             }
         } else {
-            setIsError(true)
+            setIsError({
+                state: true,
+                messages: {
+                    classId: studentInfo.classId === 0 ? "Lớp đang bị trống" : "",
+                    tenSinhVien: !studentInfo.tenSinhVien ? "Tên sinh viên đang bị trống" : "",
+                    maSinhVien: !studentInfo.maSinhVien ? "Mã sinh viên đang bị trống" : ""
+                }
+            })
         }
     }
 
-    const handleUpdate = (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
-        if(studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
+    const handleUpdate = async (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
+        if (studentInfo.classId && studentInfo.maSinhVien && studentInfo.tenSinhVien) {
             try {
                 e.preventDefault()
                 const token = localStorage.getItem('token')
-    
-                axios.put("v1/builder/form/sinh-vien/data", {
+
+                await axios.put("v1/builder/form/sinh-vien/data", {
                     id: Number(studentId),
                     maSinhVien: studentInfo.maSinhVien,
                     tenSinhVien: studentInfo.tenSinhVien,
@@ -124,11 +167,29 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                     }
                 })
                 navigate("/administrator/builder/data/sinh-vien.html")
-            } catch (error) {
-                console.log({ error });
+            } catch (error: unknown) {
+                if ((error as IError).response.status === 400) {
+                    setIsError({
+                        state: true,
+                        messages: {
+                            classId: "",
+                            tenSinhVien: "",
+                            maSinhVien: "Mã sinh viên bị trùng"
+                        }
+                    })
+                } else if((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
             }
         } else {
-            setIsError(true)
+            setIsError({
+                state: true,
+                messages: {
+                    classId: studentInfo.classId === 0 ? "Lớp đang bị trống" : "",
+                    tenSinhVien: !studentInfo.tenSinhVien ? "Tên sinh viên đang bị trống" : "",
+                    maSinhVien: !studentInfo.maSinhVien ? "Mã sinh viên đang bị trống" : ""
+                }
+            })
         }
     }
 
@@ -153,7 +214,7 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                             maSinhVien: e.target.value
                         })}
                     />
-                    {isError && !studentInfo.maSinhVien ? <p className="text-sm text-red-500">Mã sinh viên đang trống</p> : ""}
+                    {isError.state && isError.messages.maSinhVien ? <p className="text-sm text-red-500">{isError.messages.maSinhVien}</p> : ""}
                 </div>
                 <div className="w-full">
                     <label htmlFor="tenSinhVien" className="block mb-2 text-sm font-medium text-gray-900">Tên sinh viên</label>
@@ -168,28 +229,13 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                             tenSinhVien: e.target.value
                         })}
                     />
-                    {isError && !studentInfo.tenSinhVien ? <p className="text-sm text-red-500">Tên sinh viên đang trống</p> : ""}
+                    {isError.messages && isError.messages.tenSinhVien ? <p className="text-sm text-red-500">{isError.messages.tenSinhVien}</p> : ""}
                 </div>
             </div>
-            {/* <div className="mb-5">
-                <label htmlFor="message" className="block mb-2 text-sm font-medium text-gray-900">Mô tả</label>
-                <textarea
-                    id="message"
-                    rows={4}
-                    className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Leave a comment..."
-                    onChange={(e) => setStudentInfo({
-                        ...studentInfo,
-                        moTa: e.target.value
-                    })}
-                >{studentInfo.moTa}</textarea>
-                {isError && !studentInfo.moTa ? <p className="text-sm text-red-500">Mô tả sinh viên đang trống</p> : ""}
-            </div> */}
-
             <div className="mb-5">
                 <label htmlFor="countries" className="block mb-2 text-sm font-medium text-gray-900">Lớp</label>
-                <select 
-                    id="countries" 
+                <select
+                    id="countries"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                     onChange={e => setStudentInfo({
                         ...studentInfo,
@@ -198,16 +244,16 @@ const FormStudent = ({ studentId }: { studentId?: string }) => {
                 >
                     <option >Chọn lớp</option>
                     {
-                        studentClass?.map((item: ClassValue) =>(
-                            <option 
-                                value={item.id} 
+                        studentClass?.map((item: ClassValue) => (
+                            <option
+                                value={item.id}
                                 key={item.id}
                                 selected={item.id === studentInfo.classId}
                             >{item.tenLop}</option>
                         ))
                     }
                 </select>
-                {isError && !studentInfo.classId ? <p className="text-sm text-red-500">Lớp đang trống</p> : ""}
+                {isError.state && isError.messages.classId ? <p className="text-sm text-red-500">{isError.messages.classId}</p> : ""}
             </div>
             <button
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
