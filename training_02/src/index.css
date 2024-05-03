@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .item_parent:hover > div {
+        background-color: #fff;
+    }
+}
