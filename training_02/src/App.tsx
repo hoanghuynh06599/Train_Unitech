@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router-dom"
+import { Routes, Route } from "react-router-dom"
 import CategoriesConfig from "./pages/managements/categoriesConfig/CategoriesConfig"
 import axios from "axios"
 import EditCategoriesConfig from "./pages/managements/categoriesConfig/EditCategoriesConfig"
@@ -10,7 +10,6 @@ import EditStudent from "./pages/managements/student/EditStudent"
 import CreateStudent from "./pages/managements/student/CreateStudent"
 import StudentPage from "./pages/managements/student/Student"
 import LoginPage from "./pages/auth/Login"
-import { useEffect } from "react"
 import NotFound from "./pages/notFound/NotFound"
 import AdminLayout from "./layouts/AdminLayout"
 import FolderPage from "./pages/managements/folder/Folder"
@@ -20,45 +19,9 @@ import EditForm from "./pages/managements/form/EditStudent"
 import CreateForm from "./pages/managements/form/CreateForm"
 import FormPage from "./pages/managements/form/Form"
 
-const handleCheckToken = async ({ token }: { token: string }) => {
-  try {
-    return await axios.get("v2/auth/check", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-  } catch (error) {
-    console.log(error);
-  }
-}
-
 const App = () => {
   axios.defaults.baseURL = "http://192.168.5.240/api/"
   axios.defaults.headers["API-Key"] = "0177e09f564ea6fb08fbe969b6c70877"
-  const navigate = useNavigate()
-
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = localStorage.getItem("token")
-      if (token) {
-        try {
-          if (await handleCheckToken({ token })) {
-            // console.log("OK");
-          } else {
-            navigate("/auth/login")
-          }
-        } catch (error) {
-          console.log({ error });
-        }
-      } else {
-        navigate("/auth/login")
-      }
-    }
-
-    checkToken()
-  }, [navigate])
-
 
   return (
     <div className='flex bg-gray-100 min-h-screen gap-4'>

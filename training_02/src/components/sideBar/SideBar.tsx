@@ -74,7 +74,6 @@ const AppBar = () => {
                     method: "GET",
                     typeAuthorized: "Authorization",
                 })
-                console.log(res.data);
 
                 setMenuItems(res.data)
             } catch (error) {
@@ -111,6 +110,7 @@ const AppBar = () => {
                 searchContext?.setFolderSearch("")
                 searchContext?.setFormSearch("")
                 searchContext?.setStudentSearch("")
+                searchContext?.setFolderSearchByParent("")
                 navigate(listChildrent[i].dataset.url)
                 break
             }

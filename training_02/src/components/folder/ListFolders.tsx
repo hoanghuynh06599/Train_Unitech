@@ -5,9 +5,9 @@ import { requestWithToken } from "../../hooks/useRequest"
 import { IFolderData, IFolderError, IPaging } from "../../services/interfaces"
 import { range } from "../../utils/commonUtils"
 
-export const getFolders = async ({ query, page, limit = 5 }: { query?: string, page: number, limit?: number }) => {
+export const getFolders = async ({ query, page, limit = 5, parentSearch }: { query?: string, page: number, limit?: number, parentSearch?: string }) => {
     const res = await requestWithToken({
-        url: `v1/folder?page=${page}&pageSize=${limit}&name_like=${query}`,
+        url: `v1/folder?page=${page}&pageSize=${limit}&name_like=${query}&parent=${parentSearch}`,
         method: "GET",
         typeAuthorized: "Authorization",
     })
@@ -32,7 +32,7 @@ const ListFolder = () => {
             setIsLoading(true)
             try {
                 setFolderData([])
-                const data = await getFolders({ query: searchContext?.folderSearch, page: currPage })
+                const data = await getFolders({ query: searchContext?.folderSearch, page: currPage, parentSearch: searchContext?.folderSearchByParent })
                 setPaging({
                     allowNext: data?.pagination?.allowNext,
                     allowPrev: data?.pagination?.allowPrev,
@@ -50,7 +50,7 @@ const ListFolder = () => {
             }
         }
         getData()
-    }, [searchContext?.folderSearch, currPage, navigate])
+    }, [searchContext?.folderSearch, searchContext?.folderSearchByParent, currPage, navigate])
 
     const handleSetPage = ({ page }: { page: number }) => {
         let direction;
@@ -110,7 +110,7 @@ const ListFolder = () => {
     if (isLoading) return <h1>Loading....</h1>
 
     return (
-        <div className="relative overflow-x-auto shadow-md sm:rounded-lg px-6 mt-4 pb-10">
+        <div className="relative overflow-x-auto shadow-md sm:rounded-lg pr-6 mt-4 pb-10 flex-1">
             <table className="w-full text-sm text-left rtl:text-right text-gray-500">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>

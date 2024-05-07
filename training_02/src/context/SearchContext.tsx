@@ -11,6 +11,8 @@ interface ISearchContext {
     setFolderSearch: Dispatch<React.SetStateAction<string>>;
     formSearch: string;
     setFormSearch: Dispatch<React.SetStateAction<string>>;
+    folderSearchByParent: string;
+    setFolderSearchByParent: Dispatch<React.SetStateAction<string>>;
 }
 
 const SearchContext = createContext<ISearchContext | undefined>(undefined);
@@ -21,6 +23,7 @@ const SearchProvider = ({ children }: { children: React.ReactNode }) => {
     const [classSearch, setClassSearch] = useState("")
     const [studentSearch, setStudentSearch] = useState("")
     const [folderSearch, setFolderSearch] = useState("")
+    const [folderSearchByParent, setFolderSearchByParent] = useState("")
     const [formSearch, setFormSearch] = useState("")
 
     const values = {
@@ -28,7 +31,9 @@ const SearchProvider = ({ children }: { children: React.ReactNode }) => {
         studentSearch, setStudentSearch,
         classSearch, setClassSearch,
         folderSearch, setFolderSearch,
-        formSearch, setFormSearch
+        formSearch, setFormSearch,
+        folderSearchByParent, 
+        setFolderSearchByParent
     }
 
     return (

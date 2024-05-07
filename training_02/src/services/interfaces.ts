@@ -4,6 +4,13 @@ export interface ISideBarItem {
     url: string
 }
 
+export interface ISubItemSideBarItem  {
+    children: ISubItemSideBarItem[]
+    name: string
+    url: string
+    id: string
+}
+
 export interface IClassData {
     id: string
     maLop: string,

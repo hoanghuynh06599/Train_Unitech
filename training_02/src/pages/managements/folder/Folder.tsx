@@ -1,16 +1,106 @@
-import { Suspense, lazy, useState } from "react"
+import { MouseEvent, Suspense, lazy, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSearchContext } from "../../../hooks/useSearchContext"
+import { requestWithToken } from "../../../hooks/useRequest"
+import { AngleDown } from "../../../components/icons/Icons"
+import { IError, ISubItemSideBarItem } from "../../../services/interfaces"
 const ListFolder = lazy(() => import("../../../components/folder/ListFolders"))
+
+type IFunctionClickParent = ({ e }: { e: MouseEvent<HTMLLIElement, globalThis.MouseEvent> }) => void
+const handleRenderChildItem = ({ 
+    item, 
+    countChild, 
+    handleCloseParent 
+}: { item: ISubItemSideBarItem, countChild: number, handleCloseParent: IFunctionClickParent }) => {
+    countChild++
+    if (item.children.length) {
+        return (
+            <li 
+                onClick={(e) => item.children.length ? handleCloseParent({ e }) : null}
+                className="overflow-hidden h-11"
+                id={`sub-menu-${item.id}`}
+                data-id={item.id}
+            >
+                <p
+                    className="py-2.5 px-4 hover:bg-gray-100 rounded-lg cursor-pointer flex items-center justify-between select-none"
+                    style={{ paddingLeft: countChild * 16 + "px" }}
+                >
+                    {item.name}
+                    {item.children.length ? <span className="pointer-events-none"><AngleDown /></span> : ""}
+                </p>
+                {
+                    item.children.length ?
+                        item.children.map((child: ISubItemSideBarItem) => handleRenderChildItem({ item: child, countChild, handleCloseParent })) :
+                        null
+                }
+            </li>
+        )
+    } else {
+        return (
+            <div>
+                <p 
+                    className="py-2.5 px-4 hover:bg-gray-100 rounded-lg cursor-pointer flex items-center justify-between"
+                    style={{ paddingLeft: countChild * 16 + "px" }}
+                >
+                    <span>{item.name}</span>
+                </p>
+            </div>
+        )
+    }
+}
 
 const FolderPage = () => {
     const [searchValue, setSearchValue] = useState("")
     const searchContext = useSearchContext()
     const navigate = useNavigate()
+    const [currMenuOpen, setCurrMenuOpen] = useState("")
+    const [menuItems, setMenuItems] = useState<ISubItemSideBarItem[]>([])
 
     const handleSearch = () => {
         searchContext?.setFolderSearch(searchValue)
     }
+
+    const handleCloseParent: IFunctionClickParent = ({ e }) => {
+        e.stopPropagation();
+        const parentDom = e.target?.parentNode
+        const parentId = parentDom.dataset.id;
+
+        if(currMenuOpen !== "") {
+            const menuOpen = document.getElementById(currMenuOpen);
+            menuOpen?.classList.add("h-11")
+        }
+        
+        searchContext?.setFolderSearchByParent(parentId)
+        if(parentDom.className.includes("h-11")) {
+            parentDom.classList.remove("h-11")
+            setCurrMenuOpen(`sub-menu-${parentId}`)
+        } else {
+            parentDom.classList.add("h-11")
+        }
+    }
+
+    useEffect(() => {
+        const handleGetSubMenu = async () => {
+            try {
+                const res = await requestWithToken({
+                    url: "v1/folder/tree",
+                    method: "GET",
+                    typeAuthorized: "Token"
+                })
+
+                setMenuItems(res.data)
+
+            } catch (error) {
+                if ((error as IError).response.status === 401) {
+                    navigate("/auth/login")
+                }
+                console.log(error);
+            }
+        }
+
+        handleGetSubMenu()
+    }, [])
+
 
     return (
         <div className="mt-5">
@@ -50,9 +140,19 @@ const FolderPage = () => {
                     </div>
                 </div>
 
-                <Suspense fallback={<h1>Loading.....</h1>}>
-                    <ListFolder />
-                </Suspense>
+                <div className="flex">
+                    <div className="mx-6 mt-4 max-h-fit">
+                        <ul className="bg-gray-50 py-4 px-2 space-y-2">
+                            {
+                                menuItems.map((item: ISubItemSideBarItem) => handleRenderChildItem({ item, countChild: 0, handleCloseParent }))
+                            }
+                        </ul>
+                    </div>
+
+                    <Suspense fallback={<h1>Loading.....</h1>}>
+                        <ListFolder />
+                    </Suspense>
+                </div>
             </div>
         </div>
     )
