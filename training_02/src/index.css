@@ -6,4 +6,8 @@
     .item_parent:hover > div {
         background-color: #fff;
     }
+
+    .hide_scrollbar::-webkit-scrollbar {
+        display: none;
+    }
 }

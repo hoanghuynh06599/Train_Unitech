@@ -1,8 +1,10 @@
 import { MouseEvent, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { request } from "../../hooks/useRequest"
+import { useDialogContext } from "../../hooks/useDialog"
 
 const LoginPage = () => {
+    const dialogContext = useDialogContext()
     const [userInfo, setUserInfo] = useState({
         username: "admin",
         password: "Abc@1234",
@@ -26,6 +28,7 @@ const LoginPage = () => {
                 if(!res.status) {
                     setIsLoginFailed(true)
                 } else {
+                    dialogContext?.handleCloseDialog()
                     localStorage.setItem("token", res.data.token)
                     navigate("/administrator/builder/data/lop-hoc.html")
                 }

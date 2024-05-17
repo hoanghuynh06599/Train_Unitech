@@ -143,6 +143,12 @@ const ListForm = () => {
                                     >
                                         Remove
                                     </span>
+                                    <span
+                                        className="cursor-pointer font-medium text-green-600 hover:underline"
+                                        onClick={() => navigate(`/administrator/form-field/${form.id}`)}
+                                    >
+                                        Build
+                                    </span>
                                 </td>
                             </tr>
                         ))

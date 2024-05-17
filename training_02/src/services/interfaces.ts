@@ -4,7 +4,7 @@ export interface ISideBarItem {
     url: string
 }
 
-export interface ISubItemSideBarItem  {
+export interface ISubItemSideBarItem {
     children: ISubItemSideBarItem[]
     name: string
     url: string
@@ -41,7 +41,7 @@ export interface IFormData {
     showView: boolean,
     description: string
     folder?: IFolderData
-}  
+}
 
 export interface IResStudentData {
     id: string
@@ -81,4 +81,40 @@ export interface IMenuItem {
     name: string
     pageTitle: string
     url: string
+}
+
+export interface IFormFieldDetailData {
+    id: number
+    name: string
+    type: string
+    apiKey: string
+    defaultValue: unknown
+    description: string
+    displayOnList: boolean
+    displayOnListDefault: boolean
+    formCol: number
+    formHidden: boolean
+    isMultiple: boolean
+    isParent: boolean
+    isRequired: boolean
+    isUnique: boolean
+    max: number
+    min: number
+    referenceId: number
+    relationship: string
+    sort: number
+    sqlWhere: string
+}
+
+
+export interface IFormFieldDataWithPosition extends IFormFieldDetailData{
+    isChangePosition: boolean
+}
+
+export interface IDataType {
+    id: number
+    name: string
+    dataType: string
+    subName: string
+    desc: string
 }

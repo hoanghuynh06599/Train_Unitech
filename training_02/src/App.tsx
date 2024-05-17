@@ -18,13 +18,14 @@ import EditFolder from "./pages/managements/folder/EditStudent"
 import EditForm from "./pages/managements/form/EditStudent"
 import CreateForm from "./pages/managements/form/CreateForm"
 import FormPage from "./pages/managements/form/Form"
+import FormField from "./pages/managements/formField/FormField"
 
 const App = () => {
   axios.defaults.baseURL = "http://192.168.5.240/api/"
   axios.defaults.headers["API-Key"] = "0177e09f564ea6fb08fbe969b6c70877"
 
   return (
-    <div className='flex bg-gray-100 min-h-screen gap-4'>
+    <div className='flex bg-gray-100 gap-4'>
       <Routes>
         <Route path="/auth">
           <Route path="login" element={<LoginPage />} />
@@ -49,11 +50,11 @@ const App = () => {
               <Route path="form" element={<CreateForm />} />
             </Route>
           </Route>
-
           <Route path="internship/builder/">
             <Route path="folder.html"  element={<FolderPage />} />
             <Route path="form.html"  element={<FormPage />} />
           </Route>
+          <Route path="form-field/:id" element={<FormField />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
